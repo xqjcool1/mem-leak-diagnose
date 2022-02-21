@@ -1,16 +1,16 @@
-#!/bin/bash
 # author  : Xing Qingjie  xqjcool@gmail.com
-# version : 0.01
-# history : 01/18/2022	v0.01 init draft
+# version : 0.02
+# history : 02/21/2022	v0.02 support ash shell
+#           01/18/2022  v0.01 init draft
 
 # socket queue Recv-Q and Send-Q limit(Bytes)
-declare -i MEM_THRESHOLD=80
+MEM_THRESHOLD=80
 # socket queue Recv-Q and Send-Q limit(Bytes)
-declare -i SOCK_QUEUE_LIMIT=500000
+SOCK_QUEUE_LIMIT=500000
 # black hole memory limit(KBytes)
-declare -i BLACK_HOLE_LIMIT=500000
+BLACK_HOLE_LIMIT=500000
 # /tmp directory memory limit(KBytes)
-declare -i TMP_MEM_LIMIT=100000
+TMP_MEM_LIMIT=100000
 
 # color print functions
 echoGreen()
@@ -74,8 +74,8 @@ diagnose_socket_queue()
     old=$IFS
     IFS=$'\n'
     for i in $(ss -ap); do
-       declare -i rcv=$(echo $i | awk '{print $3}')
-       declare -i snd=$(echo $i | awk '{print $4}')
+       rcv=$(echo $i | awk '{print $3}')
+       snd=$(echo $i | awk '{print $4}')
 
        if [ $rcv -gt $SOCK_QUEUE_LIMIT ]; then
            # process Recv-Q 
@@ -112,7 +112,7 @@ diagnose_user_mem()
     # check /tmp memory
     echoYellow ======== check user space memory ========
 
-    declare -i tmp_mem=$(du -s /tmp/ | awk '{print $1}')
+    tmp_mem=$(du -s /tmp/ | awk '{print $1}')
 
     if [ $tmp_mem -gt $TMP_MEM_LIMIT ]; then
         echoRed tmp directory occupies too much memory $tmp_mem. please clean it
@@ -132,7 +132,7 @@ diagnose_kernel_mem()
 
     # check slab memory
     slab_usage_percent=$(($Slab * 100 / $MemTotal))
-	
+
 	# slab usage is greater than 3/8 MEM_THRESHOLD
     if [ $(($slab_usage_percent * 8)) -gt $(($MEM_THRESHOLD * 3)) ]; then
         echoRed slab memory is suspicious, please check
@@ -140,21 +140,23 @@ diagnose_kernel_mem()
         echo "${slab_list}"
     else
         echoRed vmalloc memory is suspicious, please check
-        declare -A vmalloc
-        old=$IFS
-        IFS=$'\n'
-        vmallc_list=$(cat /proc/vmallocinfo | grep -v "ioremap")
-        for i in $vmallc_list; do
-            type=$(echo $i | awk '{print $3}')
-            vmem=$(echo $i | awk '{print $2}')
+        if [ "${SHELL}" = "/bin/bash" ]; then
+            declare -A vmalloc
+            old=$IFS
+            IFS=$'\n'
+            vmallc_list=$(cat /proc/vmallocinfo | grep -v "ioremap")
+            for i in $vmallc_list; do
+                type=$(echo $i | awk '{print $3}')
+                vmem=$(echo $i | awk '{print $2}')
 
-            let vmalloc[$type]+=$vmem
-        done
-        IFS=$old
+                let vmalloc[$type]+=$vmem
+            done
+            IFS=$old
 
-        for i in ${!vmalloc[@]}; do
-            echo $i: ${vmalloc[$i]}
-        done
+            for i in ${!vmalloc[@]}; do
+                echo $i: ${vmalloc[$i]}
+            done
+        fi
     fi 
 }
 
