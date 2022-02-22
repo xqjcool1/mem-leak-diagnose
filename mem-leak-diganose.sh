@@ -122,10 +122,45 @@ diagnose_user_mem()
         IFS=$'\n'
         if [ "${SHELL}" = "/bin/bash" ]; then
             ps_list=$(ps aux | sort -rn -k6 | head -5)
+            echo "${ps_list}"
         else
-            ps_list=$(ps | sort -rn -k6 | head -5)
-        fi
-        echo "${ps_list}"
+            top1=0
+            process1=""
+            top2=0
+            process2=""
+            top3=0
+            process3=""
+            for i in $(ps | grep -v PID); do
+                mem=$(echo $i | awk '{print $3}')
+                tailchar=${mem: -1}
+
+                if [ $tailchar = "m" ]; then
+                    mem=${mem%?}
+                    mem=$((mem * 1000))
+                elif [ $tailchar = "g" ]; then
+                    mem=${mem%?}
+                    mem=$((mem * 1000 * 1000))
+                fi
+
+                if [ $mem -gt $top1 ]; then
+                    top3=$top2
+                    process3=$process2
+                    top2=$top1
+                    process2=$process1
+                    top1=$mem
+                    process1=$i
+                elif [ $mem -gt $top2 ]; then
+                    top3=$top2
+                    process3=$process2
+                    top2=$mem
+                    process2=$i
+                elif [ $mem -gt $top3 ]; then
+                    top3=$mem
+                    process3=$i
+                fi
+            done
+            echo -e "${process1}\n${process2}\n$process3"
+            fi
         IFS=$old
     fi 
 }
