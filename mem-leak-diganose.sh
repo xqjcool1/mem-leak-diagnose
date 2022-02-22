@@ -117,10 +117,14 @@ diagnose_user_mem()
     if [ $tmp_mem -gt $TMP_MEM_LIMIT ]; then
         echoRed tmp directory occupies too much memory $tmp_mem. please clean it
     else
+        echoRed please check these proesses:
         old=$IFS
         IFS=$'\n'
-        ps_list=$(ps aux | sort -rn -k6 | head -5)
-        echoRed please check these proesses:
+        if [ "${SHELL}" = "/bin/bash" ]; then
+            ps_list=$(ps aux | sort -rn -k6 | head -5)
+        else
+            ps_list=$(ps | sort -rn -k6 | head -5)
+        fi
         echo "${ps_list}"
         IFS=$old
     fi 
