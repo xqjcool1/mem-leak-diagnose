@@ -1,6 +1,8 @@
 # author  : Xing Qingjie  xqjcool@gmail.com
-# version : 0.02
-# history : 02/21/2022	v0.02 support ash shell
+# version : 0.03
+# history :
+#           02/22/2022	v0.03 optimize ps memory display
+#           02/21/2022	v0.02 support ash shell
 #           01/18/2022  v0.01 init draft
 
 # socket queue Recv-Q and Send-Q limit(Bytes)
